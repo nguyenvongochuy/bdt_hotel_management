@@ -1,0 +1,100 @@
+#======================= KAFKA ===================
+# Start Zookeeper
+bin/zookeeper-server-start.sh config/zookeeper.properties
+
+# Start a broker
+bin/kafka-server-start.sh config/server.properties
+  (if want more broker)  bin/kafka-server-start.sh config/server1.properties  # remember to update in bin/kafka-server-start.sh config/server.properties
+
+#create topic
+bin/kafka-topics.sh --create --zookeeper localhost:2181 --topic HotelBookingSummary --replication-factor 1 --partitions 1
+OR
+bin/kafka-topics.sh --create --zookeeper localhost:2181 --topic HotelBookingSummary --replication-factor 2 --partitions 2
+
+
+#delete topic (if really want to delete)
+bin/kafka-topics.sh --zookeeper localhost:2181 --delete --topic HotelBookingSummary
+
+#list all topics
+bin/kafka-topics.sh --list --zookeeper localhost:2181
+
+#Describe topic
+bin/kafka-topics.sh --describe --zookeeper localhost:2181 --topic HotelBookingSummary
+
+#view data sample from consumer console
+bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic HotelBookingSummary --from-beginning
+
+
+
+#======================= HBASE ===================
+#view services
+service --status-all
+
+#Start hbase-master and hbase-region server
+sudo service hbase-master start | sudo service hbase-regionserver start
+
+
+
+#View HBASE recorded:
+hbase shell
+scan 'Hotel'
+
+
+#======================= PROJECT SCRIPT ===================
+#move and run to runPushData.sh find
+cd /home/cloudera/git/BDT-Hotel1/script/
+chmod +x runPushData.sh
+
+
+#======================== HIVE =============================
+# If Run command hive error, use below commands:
+
+#restart namenode and datanote services
+sudo  service hadoop-hdfs-namenode restart
+sudo  service hadoop-hdfs-datanode restart
+
+#don't run in safe mode if any error
+sudo -u hdfs hdfs dfsadmin -safemode leave
+
+
+#======================== Zeppelin =============================
+bin/zeppelin-daemon.sh restart
+
+#config hive context to Spark to run in Zeppelin
+sudo cp '/etc/hive/conf/hive-site.xml' /etc/spark/conf
+
+
+#============u============= MAVEN build =====================
+#below note to generate runable jar from maven build
+
+ <build>
+    <pluginManagement>
+		<plugins>
+			
+    <plugin>
+      <artifactId>maven-assembly-plugin</artifactId>
+      <configuration>
+        <archive>
+          <manifest>
+            <mainClass>cs523.Final.SparkSQL</mainClass>
+          </manifest>
+        </archive>
+        <descriptorRefs>
+          <descriptorRef>jar-with-dependencies</descriptorRef>
+        </descriptorRefs>
+      </configuration>
+    </plugin>
+  
+  
+  </plugins>
+
+
+
+    </pluginManagement>
+</build>
+
+
+and then run maven with: clean compile assembly:single
+
+Run jarunable with more libs
+--> java -cp "BDT_Hotel-0.0.1-SNAPSHOT-jar-with-dependencies.jar:/home/cloudera/git/BDT-Hotel/libs/*" cs523.Final.SparkSQL
